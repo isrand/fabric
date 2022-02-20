@@ -1,0 +1,193 @@
+---
+resource_types:
+- name: sonar-runner
+  type: docker-image
+  source:
+    repository: cathive/concourse-sonarqube-resource
+    tag: latest
+
+- name: bitbucket-pr
+  type: docker-image
+  source:
+    repository: zarplata/concourse-git-bitbucket-pr-resource
+    tag: latest
+
+resources:
+- name: pullrequest
+  type: bitbucket-pr
+  source:
+    base_url: https://bitbucket.cic-garage.com
+    username: ((bitbucket.username))
+    password: ((bitbucket.password))
+    project: vd
+    repository: gateway
+    branch: master 
+    git:
+      uri: ssh://git@bitbucket.cic-garage.com:8000/vd/gateway.git
+      private_key: ((bitbucket.private_key))
+
+- name: pullrequest-status
+  type: bitbucket-pr
+  source:
+    base_url: https://bitbucket.cic-garage.com
+    username: ((bitbucket.username))
+    password: ((bitbucket.password))
+    project: vd
+    repository: gateway
+    branch: master 
+    git:
+      uri: ssh://git@bitbucket.cic-garage.com:8000/vd/gateway.git
+      private_key: ((bitbucket.private_key))
+
+- name: code-analysis
+  type: sonar-runner
+  source:
+    host_url: https://sonar.cic-garage.com/
+    login: ((sonar-token.sonar-token))
+
+- name: gateway-image
+  type: registry-image
+  icon: docker
+  source:
+    repository: ((docker.repository))
+    username: ((docker.username))
+    password: ((docker.password))
+
+jobs:
+- name: test-pullrequest
+  max_in_flight: 1
+  build_log_retention:
+    builds: 20
+  plan:
+    - get: pullrequest
+      trigger: true
+      version: every
+    - put: pullrequest-status
+      params:
+        action: change-build-status
+        repository: pullrequest
+        state: INPROGRESS
+        key: concourse-build
+        url: "https://concourse.cic-garage.com/teams/vodafone-dab/pipelines/chaincode/jobs/build-pullrequest/build/latest"
+        description: "Building on Concourse"
+    # Task for running lint
+    - task: run-lint
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: node
+            tag: "latest"
+        inputs:
+          - name: pullrequest
+        outputs:
+          - name: pullrequest
+        run:
+          path: /bin/sh
+          args:
+            - -c
+            - |
+              echo "Node Version: $(node --version)"
+              echo "NPM Version: $(npm --version)"
+              cd pullrequest
+              npm install
+              npm run lint
+    # Task for running test cases
+    - task: run-tests
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: node
+            tag: "latest"
+        inputs:
+          - name: pullrequest
+        outputs:
+          - name: pullrequest
+        run:
+          path: /bin/sh
+          args:
+            - -c
+            - |
+              echo "Node Version: $(node --version)"
+              echo "NPM Version: $(npm --version)"
+              cd pullrequest
+              npm install
+              npm run test
+    # Task for building/bundling application code
+    - task: run-build
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: node
+            tag: "latest"
+        inputs:
+          - name: pullrequest
+        outputs:
+          - name: pullrequest
+        run:
+          path: /bin/sh
+          args:
+            - -c
+            - |
+              echo "Node Version: $(node --version)"
+              echo "NPM Version: $(npm --version)"
+              cd pullrequest
+              npm install
+              npm run build
+    - put: code-analysis
+      params:
+        project_path: pullrequest
+        project_key: VD:gateway
+        project_name: VD - gateway
+        scanner_type: cli
+        branch_name: master
+        additional_properties:
+          sonar.javascript.lcov.reportPaths: coverage/lcov_relative.info          
+  on_failure:
+        put: pullrequest-status
+        params:
+          action: change-build-status
+          repository: pullrequest
+          state: FAILED
+          key: concourse-build
+          description: "Building on Concourse"
+          url: "https://concourse.cic-garage.com/teams/vodafone-dab/pipelines/gateway/jobs/build-pullrequest/build/latest"
+  on_success:
+        put: pullrequest-status
+        params:
+          action: change-build-status
+          repository: pullrequest
+          state: SUCCESSFUL
+          key: concourse-build
+          description: "Building on Concourse"
+          url: "https://concourse.cic-garage.com/teams/vodafone-dab/pipelines/gateway/jobs/build-pullrequest/build/latest"
+
+- name: build-and-push
+  plan:
+  - get: pullrequest
+    passed: [test-pullrequest]
+    trigger: true
+  - task: build-task-image
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: vito/oci-build-task
+      inputs:
+      - name: pullrequest
+      outputs:
+      - name: image
+      params:
+        CONTEXT: pullrequest
+      run:
+        path: build
+  - put: gateway-image
+    params:
+      image: image/image.tar

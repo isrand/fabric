@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "outDir": "dist",
+        "target": "es2017",
+        "moduleResolution": "node",
+        "module": "commonjs",
+        "declaration": true,
+        "sourceMap": true
+    },
+    "include": [
+        "./src/**/*"
+, "src/asset.ts", "src/index.ts", "assetTransfer.ts"    ],
+    "exclude": [
+        "./src/**/*.spec.ts"
+    ]
+}

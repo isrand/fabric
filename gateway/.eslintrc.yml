@@ -1,0 +1,40 @@
+env:
+  es2021: true
+  node: true
+  jest: true
+extends:
+  - airbnb-base
+  - airbnb-typescript/base
+  - prettier
+parser: '@typescript-eslint/parser'
+parserOptions:
+  ecmaVersion: latest
+  sourceType: module
+  project: './tsconfig.json'
+plugins:
+  - '@typescript-eslint'
+  - prettier
+rules:
+  # Enforce use of single quotes vs. double quotes
+  quotes: [2, 'single']
+  # Allow classes to not use default exports
+  import/prefer-default-export: 0
+  # Allow for loops to include await statements
+  no-await-in-loop: 0
+  # Disable rule that enforces use of this when declaring method
+  class-methods-use-this: 0
+  # Remove AirBNB's ideals of import
+  import/no-unresolved: 0
+  # Disable requiring file extension when importing modules
+  import/extensions: 0
+  # Enforce max line length of 120 characters
+  max-len: ['error', { 'code': 120 }]
+  # Disable rule about iterators/generators
+  no-restricted-syntax: 0
+  # Throws prettier issues as eslint prettier/prettier rule errors
+  prettier/prettier: 'error'
+overrides:
+  - files:
+      - src/**/*spec.ts
+    rules:
+      import/no-extraneous-dependencies: 0

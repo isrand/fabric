@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Helper function to print usage
+print_usage() {
+  echo "Hyperledger Fabric NodeJS Gateway tool"
+  echo "Basic commands:"
+  echo "  start : Starts a Hyperledger Fabric NodeJS Gateway on a namespace"
+  echo "  stop : Stops a running Hyperledger Fabric NodeJS Gateway on a namespace"
+}
+
+setup() {
+  mkdir ./gateway/kubernetes/artifacts/certs
+  ./scripts/ccp generate
+  mv ./scripts/connection-profile.json ./gateway/kubernetes/artifacts
+  cp ./fabric-network/artifacts/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/priv_sk ./gateway/kubernetes/artifacts/certs
+  cp ./fabric-network/artifacts/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem ./gateway/kubernetes/artifacts/certs
+  cd gateway && ./scripts/setup.sh
+  cd ..
+}
+
+start() {
+  GATEWAY_IMAGE_VERSION=$1
+  if [ -z $GATEWAY_IMAGE_VERSION ]; then
+    echo "No Gateway version passed, will deploy \"latest\""
+    GATEWAY_IMAGE_VERSION=latest
+    IMAGE_PULL_POLICY=Always
+  elif [ "$GATEWAY_IMAGE_VERSION" == "local" ]; then
+    echo "Running locally built version of the Gateway"
+    GATEWAY_IMAGE_VERSION=local
+    IMAGE_PULL_POLICY=Never
+  else
+    echo "Deploying Gateway version $GATEWAY_IMAGE_VERSION"
+    IMAGE_PULL_POLICY=Always
+  fi
+  cd gateway
+  ./scripts/start.sh $GATEWAY_IMAGE_VERSION $IMAGE_PULL_POLIY
+}
+
+stop() {
+  cd gateway
+  ./scripts/stop.sh
+}
+
+build() {
+  GATEWAY_IMAGE_NAME=gateway
+  GATEWAY_IMAGE_VERSION=$1
+  echo "Building Gateway with version $GATEWAY_IMAGE_VERSION"
+  docker build -t $GATEWAY_IMAGE_NAME:$GATEWAY_IMAGE_VERSION gateway
+}
+
+if [[ $# -eq 0 ]]; then
+  print_usage
+  exit 0
+fi
+
+COMMAND=$1
+if [ "$COMMAND" == "start" ]; then
+  setup
+  start $2
+elif [ "$COMMAND" == "stop" ]; then
+  stop
+elif [ "$COMMAND" == "build" ]; then
+  if [[ $# -ne 2 ]]; then
+    echo "build needs one argument: <version> (can be x.y.z, latest or local)"
+    exit 1
+  fi
+  build $2
+else
+  echo "Unrecognized command $COMMAND"
+  print_usage
+  exit 1
+fi

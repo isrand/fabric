@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: copywalletinfo
+  labels:
+    app: copywalletinfo
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: copywalletinfo
+    spec:
+      restartPolicy: "Never"
+      volumes:
+      - name: gateway-config-pvc
+        persistentVolumeClaim:
+          claimName: gateway-config-pvc
+      containers:
+      - name: copy-gateway-config
+        image: alpine:3.7
+        imagePullPolicy: Always
+        command: ["sh", "-c", "while [ ! -f /tmp/copy_wallet_info_done ]; do echo Waiting for wallet info to be copied; sleep 1; done;"]
+        volumeMounts:
+        - mountPath: /usr/src/app/wallet
+          name: gateway-config-pvc

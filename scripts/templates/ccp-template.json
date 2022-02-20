@@ -1,0 +1,69 @@
+{
+    "name": "test-network-org1",
+    "version": "1.0.0",
+    "client": {
+        "organization": "Org1",
+        "tlsEnable": false,
+        "adminCredential": {
+        "id": "admin"
+        },
+        "enableAuthentication": false,
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "Org1": {
+            "mspid": "Org1MSP",
+            "peers": [
+                "peer0-org1"
+            ]
+        },
+        "Org2": {
+            "mspid": "Org2MSP",
+            "peers": [
+                "peer0-org2"
+            ]
+        }
+    },
+    "channels": {
+        "mychannel": {
+            "orderers": [
+                "orderer"
+            ],
+            "peers": [
+                "peer0-org1",
+                "peer0-org2"
+            ]
+        }
+    },
+    "peers": {
+        "peer0-org1": {
+            "url": "grpc://peer0-org1:7051",
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0-org1",
+                "hostnameOverride": "peer0-org1"
+            }
+        },
+        "peer0-org2": {
+            "url": "grpc://peer0-org2:7051",
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0-org2",
+                "hostnameOverride": "peer0-org2"
+            }
+        }
+    },
+    "orderers": {
+        "orderer": {
+            "url": "grpc://orderer:7050",
+            "grpcOptions": {
+                "ssl-target-name-override": "orderer",
+                "hostnameOverride": "orderer"
+            }
+        }
+    }
+}

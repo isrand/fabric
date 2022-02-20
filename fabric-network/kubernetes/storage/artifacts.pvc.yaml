@@ -1,0 +1,13 @@
+# The "shared" PVC contains all the artifacts needed by orderer / peers to bootstrap a network.
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: artifacts-pvc
+  labels:
+    app: blockchain
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

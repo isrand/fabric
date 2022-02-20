@@ -1,0 +1,55 @@
+#!/bin/bash
+
+VFDAB_MAIN_PATH=$(pwd)
+
+copy_certs_from_network_folder() {
+    echo "Copying certificates from the fabric-network folder..."
+
+    rm -rf $VFDAB_MAIN_PATH/scripts/certs
+    mkdir $VFDAB_MAIN_PATH/scripts/certs
+
+    # Org1 peer TLSCACert
+    cp $VFDAB_MAIN_PATH/fabric-network/artifacts/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem $VFDAB_MAIN_PATH/scripts/certs
+    # Org2 peer TLSCACert
+    cp $VFDAB_MAIN_PATH/fabric-network/artifacts/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem $VFDAB_MAIN_PATH/scripts/certs
+    # Orderer TLSCACert
+    cp $VFDAB_MAIN_PATH/fabric-network/artifacts/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem $VFDAB_MAIN_PATH/scripts/certs
+
+    for f in $(ls $VFDAB_MAIN_PATH/scripts/certs); do
+        awk 'NF {sub(/\r/, ""); printf "%s\n",$0;}' $VFDAB_MAIN_PATH/scripts/certs/$f > $VFDAB_MAIN_PATH/scripts/certs/$f.tmp
+        rm $VFDAB_MAIN_PATH/scripts/certs/$f
+        mv $VFDAB_MAIN_PATH/scripts/certs/$f.tmp $VFDAB_MAIN_PATH/scripts/certs/$f
+    done
+}
+
+generate_connection_profile() {
+    copy_certs_from_network_folder
+    echo "Generating JSON connection profile..."
+    cp $VFDAB_MAIN_PATH/scripts/templates/ccp-template.json $VFDAB_MAIN_PATH/scripts/connection-profile.json
+
+    # Set the Org1 Peer TLSCACert
+    jq --arg pc "$(cat $VFDAB_MAIN_PATH/scripts/certs/tlsca.org1.example.com-cert.pem)" '.peers["peer0-org1"].tlsCACerts.pem |= $pc' $VFDAB_MAIN_PATH/scripts/connection-profile.json > $VFDAB_MAIN_PATH/scripts/connection-profile.tmp.json 
+    # Set the Org2 Peer TLSCACert
+    jq --arg pc "$(cat $VFDAB_MAIN_PATH/scripts//certs/tlsca.org2.example.com-cert.pem)" '.peers["peer0-org2"].tlsCACerts.pem |= $pc' $VFDAB_MAIN_PATH/scripts/connection-profile.tmp.json > $VFDAB_MAIN_PATH/scripts/connection-profile.json 
+
+    # Set the orderer TLSCACert
+    jq --arg pc "$(cat $VFDAB_MAIN_PATH/scripts/certs/tlsca.example.com-cert.pem)" '.orderers["orderer"].tlsCACerts.pem |= $pc' $VFDAB_MAIN_PATH/scripts/connection-profile.json > $VFDAB_MAIN_PATH/scripts/connection-profile.tmp.json 
+    mv $VFDAB_MAIN_PATH/scripts/connection-profile.tmp.json $VFDAB_MAIN_PATH/scripts/connection-profile.json
+
+    rm -rf $VFDAB_MAIN_PATH/scripts/certs
+
+    echo "JSON connection profile is generated"
+}
+
+if [[ $# -eq 0 ]]; then
+  echo "ccp only accepts one command: generate"
+  exit 1
+fi
+
+COMMAND=$1
+if [ "$COMMAND" == "generate" ]; then
+  generate_connection_profile
+else
+  echo "Unrecognized command $COMMAND"
+  exit 1
+fi

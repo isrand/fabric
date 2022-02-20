@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: explorer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: explorer
+  template:
+    metadata:
+      labels:
+        component: explorer
+    spec:
+      volumes:
+        - name: explorer-crypto-config-pvc
+          persistentVolumeClaim:
+            claimName: explorer-crypto-config-pvc
+        - name: explorer-config-pvc
+          persistentVolumeClaim:
+            claimName: explorer-config-pvc
+      containers:
+        - name: explorer
+          securityContext:
+            privileged: true
+          image: hyperledger/explorer:1.1.8
+          env:
+            - name: DATABASE_HOST
+              value: blockchain-explorer-db
+            - name: DATABASE_USERNAME
+              value: hppoc
+            - name: DATABASE_PASSWORD
+              value: password
+            - name: DATABASE_DATABASE
+              value: fabricexplorer
+            - name: DISCOVERY_AS_LOCALHOST
+              value: "false"
+            - name: LOG_LEVEL_APP
+              value: "debug"
+            - name: LOG_LEVEL_DB
+              value: "info"
+            - name: LOG_LEVEL_CONSOLE
+              value: "debug"
+            - name: LOG_CONSOLE_STDOUT
+              value: "true"
+          command: ["/bin/sh", "-c"]
+          args: 
+            - rm -rf /opt/explorer/app/platform/connection-profile;
+              mkdir /opt/explorer/app/platform/connection-profile;
+              rm /opt/explorer/app/platform/fabric/config.json;
+              cp /explorer/config.json /opt/explorer/app/platform/fabric;
+              cp /explorer/connection-profile.json /opt/explorer/app/platform/fabric/connection-profile/;
+              sh /opt/explorer/start.sh;
+          volumeMounts:
+            - mountPath: /explorer
+              name: explorer-config-pvc
+            - mountPath: /tmp/crypto
+              name: explorer-crypto-config-pvc
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: explorer
+  labels:
+    run: explorer
+spec:
+  type: ClusterIP
+  selector:
+    component: explorer
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: explorer
+            

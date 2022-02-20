@@ -1,0 +1,42 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${{CHAINCODE_NAME}}
+  labels: 
+    chaincode: ${{CHAINCODE_NAME}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      chaincode: ${{CHAINCODE_NAME}}
+  template:
+    metadata:
+      labels:
+        chaincode: ${{CHAINCODE_NAME}}
+    spec:
+      containers:
+        - name: ${{CHAINCODE_NAME}}
+          image: ${{CHAINCODE_IMAGE_NAME}}:${{CHAINCODE_IMAGE_VERSION}}
+          imagePullPolicy: ${{IMAGE_PULL_POLICY}}
+          env:
+            - name: CORE_CHAINCODE_ADDRESS
+              value: 0.0.0.0:9999
+            - name: CORE_CHAINCODE_ID
+              value: ${{CORE_CHAINCODE_ID}}
+          ports:
+            - containerPort: 9999
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${{CHAINCODE_NAME}}
+spec:
+  type: ClusterIP
+  selector:
+    chaincode: ${{CHAINCODE_NAME}}
+  ports:
+  - name: "grpcs"
+    port: 9999
+    protocol: TCP
+    targetPort: 9999

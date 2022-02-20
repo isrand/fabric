@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  labels:
+    component: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: gateway
+  template:
+    metadata:
+      labels:
+        component: gateway
+    spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gateway-config-pvc
+        - name: connection-profile
+          secret:
+            secretName: connection-profile-secret
+            items:
+              - key: connection-profile.json
+                path: connection-profile.json
+            
+      containers:
+        - name: gateway
+          image: ${{GATEWAY_IMAGE_NAME}}:${{GATEWAY_IMAGE_VERSION}}
+          imagePullPolicy: ${{IMAGE_PULL_POLICY}}
+          resources:
+            limits:
+              memory: '450Mi'
+              cpu: '400m'
+            requests:
+              memory: '400Mi'
+              cpu: '300m'
+          env:
+            - name: INVOKE
+              value: 'true'
+            - name: QUERY
+              value: 'true'
+            - name: ADMIN_USER_ID
+              value: 'admin'
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/app/wallet
+            - name: connection-profile
+              mountPath: /usr/src/app/src/connection-profile
+          ports:
+            - containerPort: 4000

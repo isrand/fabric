@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Helper function to print usage
+print_usage() {
+  echo "Hyperledger Fabric Block Explorer tool"
+  echo "Basic commands:"
+  echo "  start : Starts a Hyperledger Fabric Block Explorer on a namespace"
+  echo "  stop  : Stops a running Hyperledger Fabric Block Explorer on a namespace"
+}
+
+setup() {
+  ./scripts/ccp generate
+  mv ./scripts/connection-profile.json ./fabric-explorer/config
+  cp -r ./fabric-network/artifacts/crypto-config ./fabric-explorer/config
+  cd fabric-explorer && ./scripts/setup.sh
+  cd ..
+}
+
+start() {
+  cd fabric-explorer && ./scripts/start.sh $NAMESPACE
+}
+
+stop() {
+  cd fabric-explorer && ./scripts/stop.sh $NAMESPACE
+}
+
+if [[ $# -eq 0 ]]; then
+  print_usage
+  exit 0
+fi
+
+COMMAND=$1
+if [ "$COMMAND" == "start" ]; then
+  setup
+  start
+elif [ "$COMMAND" == "stop" ]; then
+  stop
+else
+  echo "Unrecognized command $COMMAND"
+  print_usage
+  exit 1
+fi

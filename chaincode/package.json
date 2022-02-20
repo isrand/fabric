@@ -1,0 +1,72 @@
+{
+    "name": "asset-transfer-chaincode",
+    "version": "1.0.0",
+    "description": "Asset transfer contract implemented in TypeScript",
+    "main": "dist/index.js",
+    "typings": "dist/index.d.ts",
+    "engines": {
+        "node": ">=12",
+        "npm": ">=5"
+    },
+    "scripts": {
+        "lint": "eslint -c .eslintrc.yml src/**/*.ts",
+        "lint-fix": "eslint -c .eslintrc.yml src/**/*.ts --fix",
+        "pretest": "npm run lint",
+        "test": "echo 'No tests set yet'",
+        "start": "sh ./start.sh",
+        "build": "tsc",
+        "build:watch": "tsc -w",
+        "prepublishOnly": "npm run build"
+    },
+    "engineStrict": true,
+    "author": "IBM`",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "fabric-contract-api": "^2.0.0",
+        "fabric-shim": "^2.0.0"
+    },
+    "devDependencies": {
+        "@types/chai": "^4.1.7",
+        "@types/mocha": "^5.2.5",
+        "@types/node": "^10.12.10",
+        "@types/sinon": "^5.0.7",
+        "@types/sinon-chai": "^3.2.1",
+        "@typescript-eslint/eslint-plugin": "^5.10.0",
+        "@typescript-eslint/parser": "^5.10.0",
+        "chai": "^4.2.0",
+        "eslint": "^8.7.0",
+        "eslint-config-airbnb": "^19.0.4",
+        "eslint-config-airbnb-base": "^15.0.0",
+        "eslint-config-airbnb-typescript": "^16.1.0",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-import": "^2.25.4",
+        "eslint-plugin-prettier": "^4.0.0",
+        "mocha": "^5.2.0",
+        "nyc": "^14.1.1",
+        "prettier": "^2.5.1",
+        "sinon": "^7.1.1",
+        "sinon-chai": "^3.3.0",
+        "ts-node": "^7.0.1",
+        "typescript": "^3.1.6"
+    },
+    "nyc": {
+        "extension": [
+            ".ts",
+            ".tsx"
+        ],
+        "exclude": [
+            "coverage/**",
+            "dist/**"
+        ],
+        "reporter": [
+            "text-summary",
+            "html"
+        ],
+        "all": true,
+        "check-coverage": true,
+        "statements": 100,
+        "branches": 100,
+        "functions": 100,
+        "lines": 100
+    }
+}

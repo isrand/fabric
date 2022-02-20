@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -euo pipefail
+
+METADIR=$2
+type=$(cat "$METADIR/metadata.json" |grep type|awk '{print $2}');
+type=${type%?};
+type=${type#*'"'};
+type=${type%'"'*};
+#check if the "type" field is set to "external"
+if [ "$type" == "external" ]; then
+    exit 0
+fi
+
+exit 1

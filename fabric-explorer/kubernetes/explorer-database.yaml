@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockchain-explorer-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: explorer-db
+  template:
+    metadata:
+      labels:
+        name: explorer-db
+    spec:
+      containers:
+        - name: postgres
+          securityContext:
+            privileged: true
+          image: postgres:10.4-alpine
+          env:
+            - name: DATABASE_DATABASE
+              value: fabricexplorer
+            - name: DATABASE_USERNAME
+              value: hppoc
+            - name: DATABASE_PASSWORD
+              value: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blockchain-explorer-db
+  labels:
+    run: explorer-db
+spec:
+  type: ClusterIP
+  selector:
+    name: explorer-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+      name: pgsql

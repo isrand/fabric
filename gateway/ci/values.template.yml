@@ -1,0 +1,12 @@
+bitbucket:
+  username: 
+  password: 
+  private_key: 
+
+sonar-token:
+  sonar-token: 
+
+docker:
+    repository: 
+    username: 
+    password: 

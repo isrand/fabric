@@ -1,0 +1,146 @@
+#!/bin/bash
+
+CHAINCODE_PATH=chaincode
+
+# Helper function to get the Chaincode ID once installed on a peer
+get_chaincode_id() {
+  get_chaincode_name
+  CLI_PEER_POD_NAME=$(kubectl get pods -l component=cli-peer0-org1 -o jsonpath='{.items[*].metadata.name}' -n $NAMESPACE)
+  CHAINCODE_STRING=$(kubectl exec $CLI_PEER_POD_NAME -n $NAMESPACE -- peer lifecycle chaincode queryinstalled | grep $CHAINCODE_NAME)
+  read -a CHAINCODE_ARRAY <<< $CHAINCODE_STRING
+  CHAINCODE_ID=$(echo ${CHAINCODE_ARRAY[2]} | sed -e "s/,$//")
+}
+
+get_chaincode_name() {
+  CHAINCODE_NAME=$(cat $CHAINCODE_PATH/metadata.json | jq -r '.label')
+}
+
+# Helper function to print usage
+print_usage() {
+  echo "Chaincode tool"
+  echo "Basic commands:"
+  echo "  build <chaincode_folder_path> <version>  : Builds the Chaincode Docker image with version <version>"
+  echo "  package <chaincode_folder_path>  : Packages a chaincode found under <chaincode_folder_path>"
+  echo "  install <chaincode_folder_path>  : Packages a chaincode found under <chaincode_folder_path>"
+  echo "  approve <chaincode_folder_path>  : Packages a chaincode found under <chaincode_folder_path>"
+  echo "  commit <chaincode_folder_path>  : Packages a chaincode found under <chaincode_folder_path>"
+  echo "  deploy <chaincode_folder_path>  : Packages a chaincode found under <chaincode_folder_path>"
+}
+
+package() {
+  get_chaincode_name
+  cd $CHAINCODE_PATH
+  CHAINCODE_ADDRESS=$CHAINCODE_NAME:9999
+  jq --arg add "$CHAINCODE_ADDRESS" '.address |= $add' connection.json > cnct.json
+  mv cnct.json connection.json
+  tar cfz code.tar.gz connection.json
+  tar cfz $CHAINCODE_NAME.tgz metadata.json code.tar.gz
+  rm code.tar.gz
+}
+
+install() {
+  ORGANIZATION=$1
+  get_chaincode_name
+  CLI_PEER_POD_NAME=$(kubectl get pods -l component=cli-peer0-${ORGANIZATION} -o jsonpath='{.items[*].metadata.name}' -n $NAMESPACE)
+  kubectl cp ./$CHAINCODE_PATH $NAMESPACE/$CLI_PEER_POD_NAME:/chaincodes/$CHAINCODE_NAME -n $NAMESPACE;
+  kubectl exec $CLI_PEER_POD_NAME -n $NAMESPACE -- peer lifecycle chaincode install /chaincodes/$CHAINCODE_NAME/$CHAINCODE_NAME.tgz
+}
+
+approve() {
+  ORGANIZATION=$1
+  CHANNEL=$2
+  get_chaincode_name
+  get_chaincode_id
+  CLI_PEER_POD_NAME=$(kubectl get pods -l component=cli-peer0-${ORGANIZATION} -o jsonpath='{.items[*].metadata.name}' -n $NAMESPACE)
+  kubectl exec $CLI_PEER_POD_NAME -n $NAMESPACE -- peer lifecycle chaincode approveformyorg -o orderer:7050 --channelID $CHANNEL --name $CHAINCODE_NAME --version 1.0 --package-id $CHAINCODE_ID --sequence 1
+}
+
+commit() {
+  ORGANIZATION=$1
+  CHANNEL=$2
+  get_chaincode_name
+  CLI_PEER_POD_NAME=$(kubectl get pods -l component=cli-peer0-${ORGANIZATION} -o jsonpath='{.items[*].metadata.name}' -n $NAMESPACE)
+  kubectl exec $CLI_PEER_POD_NAME -n $NAMESPACE -- peer lifecycle chaincode commit -o orderer:7050 --channelID $CHANNEL --name $CHAINCODE_NAME --peerAddresses peer0-${ORGANIZATION}:7051 --version 1.0 --sequence 1
+}
+
+start() {
+  get_chaincode_name
+  CHAINCODE_IMAGE_NAME=$CHAINCODE_NAME
+  CHAINCODE_IMAGE_VERSION=$1
+  if [ -z $CHAINCODE_IMAGE_VERSION ]; then
+    echo "No Chaincode version passed, will deploy \"latest\""
+    CHAINCODE_IMAGE_VERSION=latest
+    IMAGE_PULL_POLICY=Always
+  elif [ "$CHAINCODE_IMAGE_VERSION" == "local" ]; then
+    echo "Running locally built version of the Chaincode"
+    CHAINCODE_IMAGE_VERSION=local
+    IMAGE_PULL_POLICY=Never
+  else
+    echo "Deploying Chaincode version $CHAINCODE_IMAGE_VERSION"
+    IMAGE_PULL_POLICY=Always
+  fi
+  get_chaincode_id
+  cd $CHAINCODE_PATH/kubernetes
+  sed 's/${{CORE_CHAINCODE_ID}}/'"$CHAINCODE_ID"'/g' chaincode.yaml > chaincode.tmp.yaml
+  sed 's/${{CHAINCODE_IMAGE_VERSION}}/'"$CHAINCODE_IMAGE_VERSION"'/g' chaincode.tmp.yaml > chaincode.tmp2.yaml
+  sed 's/${{CHAINCODE_IMAGE_NAME}}/'"$CHAINCODE_IMAGE_NAME"'/g' chaincode.tmp2.yaml > chaincode.tmp.yaml
+  sed 's/${{CHAINCODE_NAME}}/'"$CHAINCODE_NAME"'/g' chaincode.tmp.yaml > chaincode.tmp2.yaml
+  sed 's/${{IMAGE_PULL_POLICY}}/'"$IMAGE_PULL_POLICY"'/g' chaincode.tmp2.yaml > chaincode.$CHAINCODE_ID.yaml
+  kubectl create -n $NAMESPACE -f chaincode.$CHAINCODE_ID.yaml
+  rm chaincode.*.yaml
+}
+
+stop() {
+  get_chaincode_name
+  kubectl delete deploy/$CHAINCODE_NAME -n $NAMESPACE
+  kubectl delete svc/$CHAINCODE_NAME -n $NAMESPACE
+}
+
+build() {
+  CHAINCODE_IMAGE_NAME=$(cat ./chaincode/metadata.json | jq -r '.label')
+  CHAINCODE_IMAGE_VERSION=$1
+  echo "Building Chaincode $CHAINCODE_IMAGE_NAME with version $CHAINCODE_IMAGE_VERSION"
+  docker build -t $CHAINCODE_IMAGE_NAME:$CHAINCODE_IMAGE_VERSION chaincode
+}
+
+if [[ $# -eq 0 ]]; then
+  print_usage
+  exit 0
+fi
+
+COMMAND=$1
+if [ "$COMMAND" == "package" ]; then
+  package
+elif [ "$COMMAND" == "install" ]; then
+  if [[ $# -ne 2 ]]; then
+    echo "install needs one argument: <organization>"
+    exit 1
+  fi
+  install $2
+elif [ "$COMMAND" == "approve" ]; then
+  if [[ $# -ne 3 ]]; then
+    echo "approve needs two arguments: <organization> <channel>"
+    exit 1
+  fi
+  approve $2 $3
+elif [ "$COMMAND" == "commit" ]; then
+  if [[ $# -ne 3 ]]; then
+    echo "commit needs two arguments: <organization> <channel>"
+    exit 1
+  fi
+  commit $2 $3
+elif [ "$COMMAND" == "start" ];then
+  start $2
+elif [ "$COMMAND" == "build" ]; then
+  if [[ $# -ne 2 ]]; then
+    echo "build needs one argument: <version> (can be x.y.z, latest or local)"
+    exit 1
+  fi
+  build $2
+elif [ "$COMMAND" == "stop" ]; then
+  stop
+else
+  echo "Unrecognized command $COMMAND"
+  print_usage
+  exit 1
+fi

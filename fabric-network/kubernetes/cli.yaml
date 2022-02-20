@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cli-peer0-org{NUMBER}
+  labels:
+    component: cli-peer0-org{NUMBER}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: cli-peer0-org{NUMBER}
+  template:
+    metadata:
+      labels:
+        component: cli-peer0-org{NUMBER}
+    spec:
+      containers:
+        - name: cli-peer0-org{NUMBER}
+          image: hyperledger/fabric-tools:2.3.0
+          imagePullPolicy: IfNotPresent
+          workingDir: /etc/hyperledger/fabric/
+          tty: true
+          stdin: true
+          env:
+            - name: FABRIC_LOGGING_SPEC
+              value: info
+            - name: CHANNEL_NAME
+              value: mychannel
+            - name: CORE_PEER_ADDRESS
+              value: peer0-org{NUMBER}:7051
+            - name: CORE_PEER_LOCALMSPID
+              value: Org{NUMBER}MSP
+            - name: CORE_PEER_TLS_ENABLED
+              value: "false"
+            - name: CORE_PEER_TLS_ROOTCERT_FILE
+              value: /shared/crypto-config/peerOrganizations/org{NUMBER}.example.com/peers/peer0.org{NUMBER}.example.com/tls/ca.crt
+            - name: CORE_PEER_MSPCONFIGPATH
+              value: /shared/crypto-config/peerOrganizations/org{NUMBER}.example.com/users/Admin@org{NUMBER}.example.com/msp
+            - name: ORDERER_CA
+              value: /shared/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+          volumeMounts:
+          - mountPath: /shared
+            name: artifacts
+          - mountPath: /chaincodes
+            name: chaincode-packages
+      volumes:
+      - name: artifacts
+        persistentVolumeClaim:
+          claimName: artifacts-pvc
+      - name: chaincode-packages
+        persistentVolumeClaim:
+          claimName: chaincode-packages-pvc
