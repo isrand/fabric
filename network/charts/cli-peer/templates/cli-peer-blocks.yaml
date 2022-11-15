@@ -1,6 +1,3 @@
-# Variable assignment to make the following processes easier...
-{{ $organizationName := print .Values.organization.name}}
-
 # Different paths that contain the crypto material
 {{ $genesisBlockPath := printf "blocks/genesis.block" }}
 {{ $channelBlockPath := printf "blocks/test-channel.tx" }}
