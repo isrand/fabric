@@ -1,0 +1,28 @@
+# Different paths that contain the crypto material
+{{ $configYamlPath := printf "crypto/example.com/msp/config.yaml" }}
+{{ $signcertsPath := printf "crypto/example.com/orderers/%s.example.com/msp/signcerts/%s.example.com-cert.pem" .Release.Name .Release.Name }}
+{{ $privateKeyPath := printf "crypto/example.com/orderers/%s.example.com/msp/keystore/priv_sk" .Release.Name }}
+{{ $caCertPath := printf "crypto/example.com/orderers/%s.example.com/msp/cacerts/ca.example.com-cert.pem" .Release.Name }}
+{{ $tlsCaCertPath := printf "crypto/example.com/orderers/%s.example.com/tls/ca.crt" .Release.Name }}
+{{ $tlsServerCert := printf "crypto/example.com/orderers/%s.example.com/tls/server.crt" .Release.Name }}
+{{ $tlsServerKey := printf "crypto/example.com/orderers/%s.example.com/tls/server.key" .Release.Name }}
+{{ $adminTlsRootCaCertPath := printf "crypto/example.com/users/Admin@example.com/tls/ca.crt" }}
+{{ $adminTlsServerCertPath := printf "crypto/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem" }}
+{{ $adminTlsServerKeyPath := printf "crypto/example.com/users/Admin@example.com/msp/keystore/priv_sk" }}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-crypto-material
+type: Opaque
+data:
+  orderer_msp_config: {{ .Files.Get $configYamlPath | b64enc }}
+  orderer_signcerts: {{ .Files.Get $signcertsPath | b64enc }}
+  orderer_private_key: {{ .Files.Get $privateKeyPath | b64enc }}
+  orderer_ca_cert: {{ .Files.Get $caCertPath | b64enc }}
+  orderer_tls_ca_cert: {{ .Files.Get $tlsCaCertPath | b64enc }}
+  orderer_tls_server_cert: {{ .Files.Get $tlsServerCert | b64enc }}
+  orderer_tls_server_key: {{ .Files.Get $tlsServerKey | b64enc }}
+  orderer_admin_tls_root_ca_cert: {{ .Files.Get $adminTlsRootCaCertPath | b64enc }}
+  orderer_admin_tls_server_cert: {{ .Files.Get $adminTlsServerCertPath | b64enc }}
+  orderer_admin_tls_server_key: {{ .Files.Get $adminTlsServerKeyPath | b64enc }}

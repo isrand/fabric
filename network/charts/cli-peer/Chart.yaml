@@ -1,0 +1,4 @@
+apiVersion: v2
+name: hlf-cli-peer
+type: application
+version: 1.0.0

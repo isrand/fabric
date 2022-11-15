@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: peer-{{ .Values.organization.name }}
+  labels: 
+    component: peer-{{ .Values.organization.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: peer-{{ .Values.organization.name }}
+  template:
+    metadata:
+      labels:
+        component: peer-{{ .Values.organization.name }}
+    spec:
+      volumes:
+      - name: peer-crypto-material
+        secret:
+          secretName: peer-{{ .Values.organization.name }}-crypto-material
+          items:
+            - key: peer_msp_config
+              path: msp/config.yaml
+            - key: peer_signcerts
+              path: msp/signcerts/peer.{{ .Values.organization.name }}.example.com-cert.pem
+            - key: peer_private_key
+              path: msp/keystore/priv_sk
+            - key: peer_ca_cert
+              path: msp/cacerts/ca.{{ .Values.organization.name }}.example.com-cert.pem
+            - key: peer_tls_ca_cert
+              path: tls/ca.crt
+            - key: peer_tls_server_cert
+              path: tls/server.crt
+            - key: peer_tls_server_key
+              path: tls/server.key
+      # - name: chaincode-buildpack
+      #   persistentVolumeClaim:
+      #     claimName: chaincode-buildpack-pvc
+      containers:
+      - name: peer-{{ .Values.organization.name }}
+        volumeMounts:
+        # - name: chaincode-buildpack
+        #   mountPath: /opt/buildpack/bin
+        - name: peer-crypto-material
+          mountPath: /crypto-material
+        image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
+        workingDir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+        env:
+        - name: CORE_PEER_ID
+          value: peer-{{ .Values.organization.name }}
+        - name: CORE_PEER_ADDRESS
+          value: peer-{{ .Values.organization.name }}:7051
+        - name: CORE_PEER_LISTENADDRESS
+          value: 0.0.0.0:7051
+        - name: CORE_PEER_CHAINCODELISTENADDRESS
+          value: 0.0.0.0:7052
+        - name: CORE_PEER_GOSSIP_BOOTSTRAP
+          value: peer-{{ .Values.organization.name }}:7051
+        - name: CORE_PEER_GOSSIP_ENDPOINT
+          value: peer-{{ .Values.organization.name }}:7051
+        - name: CORE_PEER_GOSSIP_EXTERNALENDPOINT
+          value: peer-{{ .Values.organization.name }}:7051           
+        - name: CORE_PEER_GOSSIP_ORGLEADER
+          value: "true"
+        - name: CORE_PEER_COMMITTER_ENABLED
+          value: "true"
+        - name: CORE_PEER_PROFILE_ENABLED
+          value: "true"
+        - name: CORE_PEER_LOCALMSPID
+          value: {{ .Values.organization.mspID }}MSP
+        - name: CORE_PEER_MSPCONFIGPATH
+          value: /crypto-material/msp/
+        - name: CORE_PEER_TLS_ROOTCERT_FILE
+          value: /crypto-material/tls/ca.crt
+        - name: CORE_PEER_TLS_CERT_FILE
+          value: /crypto-material/tls/server.crt
+        - name: CORE_PEER_TLS_KEY_FILE
+          value: /crypto-material/tls/server.key
+        - name: CORE_PEER_TLS_ENABLED
+          value: "true"
+        - name: CORE_LEDGER_STATE_STATEDATABASE
+          value: goleveldb
+        - name: ORDERER_URL
+          value: orderer:7050
+        - name: GODEBUG
+          value: "netdns=go"
+        ports:
+          - containerPort: 7051

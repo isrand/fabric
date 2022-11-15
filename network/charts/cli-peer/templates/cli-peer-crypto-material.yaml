@@ -1,0 +1,40 @@
+# Variable assignment to make the following processes easier...
+{{ $organizationName := print .Values.organization.name}}
+
+# Different paths that contain the crypto material
+{{ $configYamlPath := printf "crypto/%s.example.com/msp/config.yaml" $organizationName }}
+{{ $signcertsPath := printf "crypto/%s.example.com/peers/peer0.%s.example.com/msp/signcerts/peer0.%s.example.com-cert.pem" $organizationName $organizationName $organizationName }}
+{{ $privateKeyPath := printf "crypto/%s.example.com/peers/peer0.%s.example.com/msp/keystore/priv_sk" $organizationName $organizationName }}
+{{ $caCertPath := printf "crypto/%s.example.com/peers/peer0.%s.example.com/msp/cacerts/ca.%s.example.com-cert.pem" $organizationName $organizationName $organizationName }}
+{{ $tlsCaCertPath := printf "crypto/%s.example.com/peers/peer0.%s.example.com/tls/ca.crt" $organizationName $organizationName }}
+{{ $tlsServerCert := printf "crypto/%s.example.com/peers/peer0.%s.example.com/tls/server.crt" $organizationName $organizationName }}
+{{ $tlsServerKey := printf "crypto/%s.example.com/peers/peer0.%s.example.com/tls/server.key" $organizationName $organizationName }}
+
+{{ $adminConfigYamlPath := printf "crypto/%s.example.com/users/Admin@%s.example.com/msp/config.yaml" $organizationName $organizationName }}
+{{ $adminCaCertPath := printf "crypto/%s.example.com/users/Admin@%s.example.com/msp/cacerts/ca.%s.example.com-cert.pem" $organizationName $organizationName $organizationName }}
+{{ $adminPrivateKeyPath := printf "crypto/%s.example.com/users/Admin@%s.example.com/msp/keystore/priv_sk" $organizationName $organizationName }}
+{{ $adminSigncertsPath := printf "crypto/%s.example.com/users/Admin@%s.example.com/msp/signcerts/Admin@%s.example.com-cert.pem" $organizationName $organizationName $organizationName }}
+
+{{ $ordererTlsCaCertPath := printf "crypto/orderer/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" }}
+
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cli-peer-{{ .Values.organization.name }}-crypto-material
+type: Opaque
+data:
+  peer_msp_config: {{ .Files.Get $configYamlPath | b64enc }}
+  peer_signcerts: {{ .Files.Get $signcertsPath | b64enc }}
+  peer_private_key: {{ .Files.Get $privateKeyPath | b64enc }}
+  peer_ca_cert: {{ .Files.Get $caCertPath | b64enc }}
+  peer_tls_ca_cert: {{ .Files.Get $tlsCaCertPath | b64enc }}
+  peer_tls_server_cert: {{ .Files.Get $tlsServerCert | b64enc }}
+  peer_tls_server_key: {{ .Files.Get $tlsServerKey | b64enc }}
+
+  peer_admin_msp_config: {{ .Files.Get $adminConfigYamlPath | b64enc }}
+  peer_admin_ca_cert: {{ .Files.Get $adminCaCertPath | b64enc }}
+  peer_admin_ca_private_key: {{ .Files.Get $adminPrivateKeyPath | b64enc }}
+  peer_admin_ca_signcerts: {{ .Files.Get $adminSigncertsPath | b64enc }}
+
+  orderer_tls_ca_cert: {{ .Files.Get $ordererTlsCaCertPath | b64enc }}

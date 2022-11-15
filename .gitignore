@@ -1,0 +1,8 @@
+network/bin
+network/charts/cli-peer/blocks
+network/charts/cli-peer/crypto
+
+network/charts/orderer/blocks
+network/charts/orderer/crypto
+
+network/charts/peer/crypto

@@ -1,0 +1,7 @@
+image:
+  name: hyperledger/fabric-peer
+  version: 2.4.7
+
+organization:
+  name:
+  mspID:

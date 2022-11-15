@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cli-peer-{{ .Values.organization.name }}
+  labels:
+    component: cli-peer-{{ .Values.organization.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: cli-peer-{{ .Values.organization.name }}
+  template:
+    metadata:
+      labels:
+        component: cli-peer-{{ .Values.organization.name }}
+    spec:
+      volumes:
+      - name: cli-peer-{{ .Values.organization.name }}-crypto-material
+        secret:
+          secretName: cli-peer-{{ .Values.organization.name }}-crypto-material
+          items:
+            - key: peer_msp_config
+              path: msp/config.yaml
+            - key: peer_signcerts
+              path: msp/signcerts/peer.{{ .Values.organization.name }}.example.com-cert.pem
+            - key: peer_private_key
+              path: msp/keystore/priv_sk
+            - key: peer_ca_cert
+              path: msp/cacerts/ca.{{ .Values.organization.name }}.example.com-cert.pem
+            - key: peer_tls_ca_cert
+              path: tls/ca.crt
+            - key: peer_tls_server_cert
+              path: tls/server.crt
+            - key: peer_tls_server_key
+              path: tls/server.key
+            - key: peer_admin_msp_config
+              path: msp/admin/config.yaml
+            - key: peer_admin_ca_cert
+              path: msp/admin/cacerts/ca.{{ .Values.organization.name }}.example.com-cert.pem
+            - key: peer_admin_ca_private_key
+              path: msp/admin/keystore/priv_sk
+            - key: peer_admin_ca_signcerts
+              path: msp/admin/signcerts/Admin@{{ .Values.organization.name }}.example.com-cert.pem
+            - key: orderer_tls_ca_cert
+              path: orderer/tls/cert.pem
+      - name: cli-peer-{{ .Values.organization.name }}-blocks
+        secret:
+          secretName: cli-peer-{{ .Values.organization.name }}-blocks
+          items:
+            - key: channel_block
+              path: test-channel.tx
+      containers:
+        - name: cli-peer-{{ .Values.organization.name }}
+          volumeMounts:
+          - name: cli-peer-{{ .Values.organization.name }}-crypto-material
+            mountPath: /crypto-material
+          - name: cli-peer-{{ .Values.organization.name }}-blocks
+            mountPath: /blocks
+          image: hyperledger/fabric-tools:2.4.7
+          workingDir: /etc/hyperledger/fabric/
+          tty: true
+          stdin: true
+          env:
+            - name: CORE_PEER_ADDRESS
+              value: peer-{{ .Values.organization.name }}:7051
+            - name: CORE_PEER_LOCALMSPID
+              value: {{ .Values.organization.mspID }}MSP
+            - name: CORE_PEER_MSPCONFIGPATH
+              value: /crypto-material/msp/admin
+            - name: CORE_PEER_TLS_ENABLED
+              value: "true"
+            - name: CORE_PEER_TLS_ROOTCERT_FILE
+              value: /crypto-material/tls/ca.crt
+            - name: CORE_PEER_TLS_CERT_FILE
+              value: /crypto-material/tls/server.crt
+            - name: CORE_PEER_TLS_KEY_FILE
+              value: /crypto-material/tls/server.key
+            - name: ORDERER_CA
+              value: /crypto-material/orderer/tls/cert.pem

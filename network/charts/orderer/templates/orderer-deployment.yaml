@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Release.Name }}
+    spec:
+      volumes:
+      - name: {{ .Release.Name }}-crypto-material
+        secret:
+          secretName: {{ .Release.Name }}-crypto-material
+          items:
+            - key: orderer_msp_config
+              path: msp/config.yaml
+            - key: orderer_signcerts
+              path: msp/signcerts/orderer.example.com-cert.pem
+            - key: orderer_private_key
+              path: msp/keystore/priv_sk
+            - key: orderer_ca_cert
+              path: msp/cacerts/ca.example.com-cert.pem
+            - key: orderer_tls_ca_cert
+              path: tls/ca.crt
+            - key: orderer_tls_server_cert
+              path: tls/server.crt
+            - key: orderer_tls_server_key
+              path: tls/server.key
+            - key: orderer_admin_tls_root_ca_cert
+              path: admin/tls/ca.crt
+            - key: orderer_admin_tls_server_cert
+              path: admin/tls/server.crt
+            - key: orderer_admin_tls_server_cert
+              path: admin/tls/server.key
+      - name: blocks
+        secret:
+          secretName: {{ .Release.Name }}-blocks
+          items:
+            - key: genesis_block
+              path: genesis.block
+      containers:
+      - name: orderer
+        volumeMounts:
+        - name: {{ .Release.Name }}-crypto-material
+          mountPath: /crypto-material
+        - name: blocks
+          mountPath: /blocks
+        image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
+        env:
+        - name: ORDERER_GENERAL_LEDGERTYPE
+          value: file
+        - name: ORDERER_FILELEDGER_LOCATION
+          value: /ledger/orderer
+        - name: ORDERER_GENERAL_BATCHTIMEOUT
+          value: 1s
+        - name: ORDERER_GENERAL_BATCHSIZE_MAXMESSAGECOUNT
+          value: "10"
+        - name: ORDERER_GENERAL_MAXWINDOWSIZE
+          value: "1000"
+        - name: ORDERER_GENERAL_ORDERERTYPE
+          value: solo
+        - name: ORDERER_GENERAL_LISTENADDRESS
+          value: 0.0.0.0
+        - name: ORDERER_GENERAL_LISTENPORT
+          value: "7050"
+        - name: ORDERER_GENERAL_LOGLEVEL
+          value: debug
+        - name: ORDERER_GENERAL_LOCALMSPDIR
+          value: /crypto-material/msp
+        - name: ORDERER_GENERAL_LOCALMSPID
+          value: OrdererMSP
+        - name: ORDERER_GENERAL_TLS_CERTIFICATE
+          value: /crypto-material/tls/server.crt
+        - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+          value: /crypto-material/tls/server.key
+        - name: ORDERER_GENERAL_TLS_ROOTCAS
+          value: "[/crypto-material/tls/ca.crt]"
+        - name: ORDERER_GENERAL_TLS_ENABLED
+          value: "true"
+        - name: ORDERER_GENERAL_GENESISMETHOD
+          value: "file"
+        - name: ORDERER_GENERAL_GENESISFILE
+          value: /blocks/genesis.block
+        ports:
+          - containerPort: 7050
+          - containerPort: 7080

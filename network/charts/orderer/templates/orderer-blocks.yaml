@@ -1,0 +1,13 @@
+# Variable assignment to make the following processes easier...
+{{ $organizationName := print .Values.organization.name}}
+
+# Different paths that contain the crypto material
+{{ $genesisBlockPath := printf "blocks/genesis.block" }}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-blocks
+type: Opaque
+data:
+  genesis_block: {{ .Files.Get $genesisBlockPath | b64enc }}
