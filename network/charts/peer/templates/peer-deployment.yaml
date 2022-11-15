@@ -33,14 +33,9 @@ spec:
               path: tls/server.crt
             - key: peer_tls_server_key
               path: tls/server.key
-      # - name: chaincode-buildpack
-      #   persistentVolumeClaim:
-      #     claimName: chaincode-buildpack-pvc
       containers:
       - name: peer-{{ .Values.organization.name }}
         volumeMounts:
-        # - name: chaincode-buildpack
-        #   mountPath: /opt/buildpack/bin
         - name: peer-crypto-material
           mountPath: /crypto-material
         image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
