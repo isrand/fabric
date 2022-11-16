@@ -130,5 +130,3 @@ joinChannelOrg2
 
 anchorPeerOrg1
 anchorPeerOrg2
-
-peer chaincode invoke -C test-channel -n asset-transfer-chaincode -c '{"Args":["initLedger"]}'
