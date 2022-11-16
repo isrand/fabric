@@ -35,7 +35,7 @@ alias network=./scripts/network
 If you have set the previous aliases in your terminal session, you can deploy all components by running:
 
 ```bash
-network && chaincode && gateway && explorer
+network && chaincode && gateway
 ```
 
 Once all the containers are up and running you can access each Gateway's Swagger UI to perform transactions through it. To do so, run:
