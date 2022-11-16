@@ -1,0 +1,58 @@
+build() {
+	docker build . -t asset-transfer-chaincode:1.0.0
+}
+
+getChaincodeId() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	CHAINCODE_ID=$(kubectl exec $cliPeerPod -n fabric -- peer lifecycle chaincode calculatepackageid /chaincodes/asset-transfer-chaincode.tgz)
+}
+
+package() {
+  tar cfz code.tar.gz connection.json
+  tar cfz asset-transfer-chaincode.tgz metadata.json code.tar.gz
+}
+
+installOrg1() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	kubectl exec $cliPeerPod -n fabric -- mkdir /chaincodes
+	kubectl cp asset-transfer-chaincode.tgz fabric/$cliPeerPod:/chaincodes/asset-transfer-chaincode.tgz -n fabric
+	kubectl exec $cliPeerPod -n fabric -- peer lifecycle chaincode install /chaincodes/asset-transfer-chaincode.tgz
+}
+
+installOrg2() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	kubectl exec $cliPeerPod -n fabric -- mkdir /chaincodes
+	kubectl cp asset-transfer-chaincode.tgz fabric/$cliPeerPod:/chaincodes/asset-transfer-chaincode.tgz -n fabric
+	kubectl exec $cliPeerPod -n fabric -- peer lifecycle chaincode install /chaincodes/asset-transfer-chaincode.tgz
+}
+
+approveOrg1() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	kubectl exec $cliPeerPod -n fabric -- peer lifecycle chaincode approveformyorg -o orderer0:7050 --channelID test-channel --name asset-transfer-chaincode --version 1.0 --package-id $CHAINCODE_ID --sequence 1 --tls --cafile /crypto-material/orderer/tls/cert.pem
+}
+
+approveOrg2() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	kubectl exec $cliPeerPod -n fabric -- peer lifecycle chaincode approveformyorg -o orderer0:7050 --channelID test-channel --name asset-transfer-chaincode --version 1.0 --package-id $CHAINCODE_ID --sequence 1 --tls --cafile /crypto-material/orderer/tls/cert.pem
+}
+
+commitOrg1() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	kubectl exec $cliPeerPod -n fabric -- peer lifecycle chaincode commit -o orderer0:7050 --channelID test-channel --name asset-transfer-chaincode --peerAddresses peer-org1:7051 --version 1.0 --sequence 1 --tls --cafile /crypto-material/orderer/tls/cert.pem --tlsRootCertFiles /crypto-material/tls/ca.crt
+}
+
+deploy() {
+  helm install asset-transfer-chaincode ./chart --set settings.local=true --set chaincode.id=$CHAINCODE_ID -n fabric
+}
+
+cd chaincode
+
+build
+package
+installOrg1
+installOrg2
+getChaincodeId
+approveOrg1
+approveOrg2
+commitOrg1
+deploy

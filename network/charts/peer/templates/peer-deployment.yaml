@@ -33,11 +33,17 @@ spec:
               path: tls/server.crt
             - key: peer_tls_server_key
               path: tls/server.key
+      - name: peer-chaincode-buildpack
+        configMap:
+          name: peer-{{ .Values.organization.name }}-chaincode-buildpack
+          defaultMode: 0744
       containers:
       - name: peer-{{ .Values.organization.name }}
         volumeMounts:
         - name: peer-crypto-material
           mountPath: /crypto-material
+        - name: peer-chaincode-buildpack
+          mountPath: /opt/buildpack/bin
         image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
         workingDir: /opt/gopath/src/github.com/hyperledger/fabric/peer
         env:
@@ -75,6 +81,8 @@ spec:
           value: "true"
         - name: CORE_LEDGER_STATE_STATEDATABASE
           value: goleveldb
+        - name: CORE_CHAINCODE_EXTERNALBUILDERS
+          value: "[{name: buildpack, path: /opt/buildpack}]"
         - name: ORDERER_URL
           value: orderer:7050
         - name: GODEBUG
