@@ -49,6 +49,10 @@ spec:
           items:
             - key: channel_block
               path: test-channel.tx
+      - name: cli-peer-add-anchor-peer
+        configMap:
+          name: cli-peer-{{ .Values.organization.name }}-add-anchor-peer
+          defaultMode: 0744
       containers:
         - name: cli-peer-{{ .Values.organization.name }}
           volumeMounts:
@@ -56,6 +60,8 @@ spec:
             mountPath: /crypto-material
           - name: cli-peer-{{ .Values.organization.name }}-blocks
             mountPath: /blocks
+          - name: cli-peer-add-anchor-peer
+            mountPath: /ops
           image: hyperledger/fabric-tools:2.4.7
           workingDir: /etc/hyperledger/fabric/
           tty: true
