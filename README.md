@@ -12,6 +12,7 @@ To simplify dependency management it is recommended that you install [Homebrew](
 
 To be able to deploy the network you will need:
 
+* [docker](https://docker.com) (`brew cask install docker`)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) (`brew install kubectl`)
 * [helm](https://helm.sh) (`brew install helm`)
 
