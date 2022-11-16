@@ -12,7 +12,7 @@ downloadBinaries() {
 	cd -
 }
 
-generateCryptoMaterial() {
+generateAndDistributeCryptoMaterial() {
 	# Clean old crypto and block folders
 	rm -rf charts/orderer/crypto
 	rm -rf charts/orderer/blocks
@@ -22,6 +22,8 @@ generateCryptoMaterial() {
 	rm -rf charts/cli-peer/crypto
 	rm -rf charts/cli-peer/blocks
 
+	rm -rf ../gateway/chart/crypto
+
 	# Create new folders for crypto and blocks
 	mkdir charts/orderer/crypto
 	mkdir charts/orderer/blocks
@@ -30,6 +32,8 @@ generateCryptoMaterial() {
 
 	mkdir charts/cli-peer/crypto
 	mkdir charts/cli-peer/blocks
+
+	mkdir ../gateway/chart/crypto
 
 	# Generate the crypto material
 	cd config
@@ -49,6 +53,7 @@ generateCryptoMaterial() {
 	# Copy crypto material to their corresponding folders
 	cp -r ./crypto-config/peerOrganizations/* ../charts/peer/crypto/
 	cp -r ./crypto-config/peerOrganizations/* ../charts/cli-peer/crypto/
+	cp -r ./crypto-config/peerOrganizations/* ../../gateway/chart/crypto/
 
 	cp -r ./crypto-config/ordererOrganizations/* ../charts/orderer/crypto
 	cp -r ./crypto-config/ordererOrganizations/* ../charts/cli-peer/crypto/orderer
@@ -61,17 +66,17 @@ generateCryptoMaterial() {
 	cd -
 }
 
-installPeers() {
+deployPeers() {
 	helm install peer-org1 ./charts/peer --set organization.name=org1 --set organization.mspID=Org1 -n fabric --wait
 	helm install peer-org2 ./charts/peer --set organization.name=org2 --set organization.mspID=Org2 -n fabric --wait
 }
 
-installCliPeers() {
+deployCliPeers() {
 	helm install cli-peer-org1 ./charts/cli-peer --set organization.name=org1 --set organization.mspID=Org1 -n fabric --wait
 	helm install cli-peer-org2 ./charts/cli-peer --set organization.name=org2 --set organization.mspID=Org2 -n fabric --wait
 }
 
-installOrderers() {
+deployOrderers() {
   helm install orderer0 ./charts/orderer --set organization.name=orderer --set organization.mspID=Orderer -n fabric
   helm install orderer1 ./charts/orderer --set organization.name=orderer --set organization.mspID=Orderer -n fabric
   helm install orderer2 ./charts/orderer --set organization.name=orderer --set organization.mspID=Orderer -n fabric
@@ -102,8 +107,7 @@ anchorPeerOrg1() {
 
 anchorPeerOrg2() {
 	cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer"
-	rm -rf /ops
+	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer;"
 }
 
 kubectl get namespace | grep fabric
@@ -119,10 +123,10 @@ if [ ! -d bin ]; then
 	downloadBinaries
 fi
 
-generateCryptoMaterial
-installOrderers
-installCliPeers
-installPeers
+generateAndDistributeCryptoMaterial
+deployOrderers
+deployCliPeers
+deployPeers
 
 createChannel
 joinChannelOrg1

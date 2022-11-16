@@ -52,7 +52,7 @@ package
 installOrg1
 installOrg2
 getChaincodeId
+deploy
 approveOrg1
 approveOrg2
 commitOrg1
-deploy
