@@ -113,7 +113,7 @@ You will receive an array of elements that were added to the chain with the ledg
         "docType": "asset"
       }
     },
-		...
-	]
+	...
+  ]
 }
 ```
