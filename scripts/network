@@ -94,6 +94,18 @@ joinChannelOrg2() {
 	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel join -b test-channel_0.block --tls --cafile /crypto-material/orderer/tls/cert.pem"
 }
 
+anchorPeerOrg1() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer"
+	rm -rf /ops
+}
+
+anchorPeerOrg2() {
+	cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer"
+	rm -rf /ops
+}
+
 kubectl get namespace | grep fabric
 if [ "$?" -eq 0 ]; then
 	echo "Namespace fabric already exists."
@@ -115,3 +127,8 @@ installPeers
 createChannel
 joinChannelOrg1
 joinChannelOrg2
+
+anchorPeerOrg1
+anchorPeerOrg2
+
+peer chaincode invoke -C test-channel -n asset-transfer-chaincode -c '{"Args":["initLedger"]}'
