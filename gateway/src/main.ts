@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Configuration } from './config/Configuration';
 
 async function bootstrap() {
   // Initialize application
@@ -8,7 +9,7 @@ async function bootstrap() {
 
   // Create Swagger page
   const documentation = new DocumentBuilder()
-    .setTitle('Hyperledger Fabric 2.4.7 Gateway')
+    .setTitle(`Hyperledger Fabric 2.4.7 Gateway — ${Configuration.mspID}`)
     .setVersion('1.0')
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, documentation);
