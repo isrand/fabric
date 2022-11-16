@@ -1,6 +1,6 @@
 # Hyperledger Fabric POC Network
 
-![Components 2.4.7](https://img.shields.io/badge/Hyperledger_Fabric-2.4.7-green?style=flat-square) ![Explorer 1.1.8](https://img.shields.io/badge/Hyperledger_Explorer-1.1.8-blue?style=flat-square)
+![Components 2.4.7](https://img.shields.io/badge/Hyperledger_Fabric-2.4.7-green?style=flat-square)
 
 This repository contains a minimal Hyperledger Fabric Network with extra components to quickly develop and validate a proof of concept.
 
