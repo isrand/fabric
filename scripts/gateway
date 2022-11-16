@@ -14,3 +14,4 @@ cd gateway
 
 build
 deployGatewayOrg1
+deployGatewayOrg2

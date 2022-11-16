@@ -19,8 +19,6 @@ spec:
         secret:
           secretName: fabric-gateway-{{ .Values.organization.name }}-crypto-material
           items:
-            - key: peer_ca_cert
-              path: peer/ca-cert.pem
             - key: peer_tls_ca_cert
               path: peer/tlsca-cert.pem
             - key: admin_private_key
