@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: asset-transfer-chaincode
+spec:
+  type: ClusterIP
+  selector:
+    chaincode: asset-transfer-chaincode
+  ports:
+  - name: "grpcs"
+    port: 9999
+    protocol: TCP
+    targetPort: 9999

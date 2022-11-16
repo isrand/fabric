@@ -1,0 +1,30 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asset-transfer-chaincode
+  labels: 
+    chaincode: asset-transfer-chaincode
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      chaincode: asset-transfer-chaincode
+  template:
+    metadata:
+      labels:
+        chaincode: asset-transfer-chaincode
+    spec:
+      containers:
+        - name: asset-transfer-chaincode
+          image: asset-transfer-chaincode:1.0.0
+					{{- if (eq .Values.settings.local true )}}
+          imagePullPolicy: Never
+					{{- end }}
+          env:
+            - name: CORE_CHAINCODE_ADDRESS
+              value: 0.0.0.0:9999
+            - name: CORE_CHAINCODE_ID
+              value: {{ .Values.chaincode.id }}
+          ports:
+            - containerPort: 9999

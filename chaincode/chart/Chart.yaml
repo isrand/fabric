@@ -1,0 +1,4 @@
+apiVersion: v2
+name: hlf-chaincode-as-a-service
+type: application
+version: 1.0.0
