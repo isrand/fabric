@@ -22,7 +22,7 @@ Furthermore, if you want to develop new features or expand upon this boilerplate
 
 ## Aliases
 
-To be able to deploy the network with just a couple of scripts it is recommended that you run the following on your terminal session:
+To be able to deploy the network with just a couple of scripts it is recommended that you run the following in your terminal session:
 
 ```bash
 alias chaincode=./scripts/chaincode
