@@ -18,9 +18,9 @@ spec:
       containers:
         - name: asset-transfer-chaincode
           image: asset-transfer-chaincode:1.0.0
-					{{- if (eq .Values.settings.local true )}}
+          {{- if (eq .Values.settings.local true )}}
           imagePullPolicy: Never
-					{{- end }}
+          {{- end }}
           env:
             - name: CORE_CHAINCODE_ADDRESS
               value: 0.0.0.0:9999
