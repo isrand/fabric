@@ -1,6 +1,5 @@
 export class Configuration {
 	public static readonly peerTLSRootCertificatePath = String(process.env.PEER_TLS_ROOT_CERT_PATH);
-	public static readonly organizationName = String(process.env.ORGANIZATION_NAME);
 	public static readonly mspID = String(process.env.MSP_ID);
 	public static readonly peerEndpoint = String(process.env.PEER_ENDPOINT);
 
