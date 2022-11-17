@@ -1,79 +1,82 @@
 downloadBinaries() {
-	mkdir bin
-	wget https://github.com/hyperledger/fabric/releases/download/v2.4.7/hyperledger-fabric-linux-amd64-2.4.7.tar.gz
-	mv hyperledger-fabric-linux-amd64-2.4.7.tar.gz bin/
-	cd bin
-	tar xf hyperledger-fabric-linux-amd64-2.4.7.tar.gz
-	mv bin/configtxgen .
-	mv bin/cryptogen .
-	mv bin/osnadmin .
-	rm hyperledger-fabric-linux-amd64-2.4.7.tar.gz
-	rm -rf bin builders config
-	cd -
+  mkdir bin
+  wget https://github.com/hyperledger/fabric/releases/download/v2.4.7/hyperledger-fabric-linux-amd64-2.4.7.tar.gz
+  mv hyperledger-fabric-linux-amd64-2.4.7.tar.gz bin/
+  cd bin
+  tar xf hyperledger-fabric-linux-amd64-2.4.7.tar.gz
+  mv bin/configtxgen .
+  mv bin/cryptogen .
+  mv bin/osnadmin .
+  rm hyperledger-fabric-linux-amd64-2.4.7.tar.gz
+  rm -rf bin builders config
+  cd -
 }
 
 generateAndDistributeCryptoMaterial() {
-	# Clean old crypto and block folders
-	rm -rf charts/orderer/crypto
-	rm -rf charts/orderer/blocks
+  # Clean old crypto and block folders
+  rm -rf charts/orderer/crypto
+  rm -rf charts/orderer/blocks
 
-	rm -rf charts/peer/crypto
+  rm -rf charts/peer/crypto
 
-	rm -rf charts/cli-peer/crypto
-	rm -rf charts/cli-peer/blocks
+  rm -rf charts/cli-peer/crypto
+  rm -rf charts/cli-peer/blocks
 
-	rm -rf ../gateway/chart/crypto
+  rm -rf ../gateway/chart/crypto
+  rm -rf ../notifier/chart/crypto
 
-	# Create new folders for crypto and blocks
-	mkdir charts/orderer/crypto
-	mkdir charts/orderer/blocks
+  # Create new folders for crypto and blocks
+  mkdir charts/orderer/crypto
+  mkdir charts/orderer/blocks
 
-	mkdir charts/peer/crypto
+  mkdir charts/peer/crypto
 
-	mkdir charts/cli-peer/crypto
-	mkdir charts/cli-peer/blocks
+  mkdir charts/cli-peer/crypto
+  mkdir charts/cli-peer/blocks
 
-	mkdir ../gateway/chart/crypto
+  mkdir ../gateway/chart/crypto
+  mkdir ../notifier/chart/crypto
 
-	# Generate the crypto material
-	cd config
-	../bin/cryptogen generate --config ./crypto-config.yaml --output ./crypto-config
+  # Generate the crypto material
+  cd config
+  ../bin/cryptogen generate --config ./crypto-config.yaml --output ./crypto-config
 
-	# Generate the blocks
-	../bin/configtxgen -profile TwoOrgsOrdererGenesis -outputBlock genesis.block -channelID system-channel
-	../bin/configtxgen -profile test-channel -outputCreateChannelTx test-channel.tx -channelID test-channel
+  # Generate the blocks
+  ../bin/configtxgen -profile TwoOrgsOrdererGenesis -outputBlock genesis.block -channelID system-channel
+  ../bin/configtxgen -profile test-channel -outputCreateChannelTx test-channel.tx -channelID test-channel
 
-	# Copy blocks to their corresponding folders
-	cp test-channel.tx ../charts/cli-peer/blocks/test-channel.tx
+  # Copy blocks to their corresponding folders
+  cp test-channel.tx ../charts/cli-peer/blocks/test-channel.tx
 
-	cp genesis.block ../charts/orderer/blocks/genesis.block
-	cp genesis.block ../charts/cli-peer/blocks/genesis.block
+  cp genesis.block ../charts/orderer/blocks/genesis.block
+  cp genesis.block ../charts/cli-peer/blocks/genesis.block
 
 
-	# Copy crypto material to their corresponding folders
-	cp -r ./crypto-config/peerOrganizations/* ../charts/peer/crypto/
-	cp -r ./crypto-config/peerOrganizations/* ../charts/cli-peer/crypto/
-	cp -r ./crypto-config/peerOrganizations/* ../../gateway/chart/crypto/
+  # Copy crypto material to their corresponding folders
+  cp -r ./crypto-config/peerOrganizations/* ../charts/peer/crypto/
+  cp -r ./crypto-config/peerOrganizations/* ../charts/cli-peer/crypto/
+  cp -r ./crypto-config/peerOrganizations/* ../../gateway/chart/crypto/
+  cp -r ./crypto-config/peerOrganizations/* ../../notifier/chart/crypto/
 
-	cp -r ./crypto-config/ordererOrganizations/* ../charts/orderer/crypto
-	cp -r ./crypto-config/ordererOrganizations/* ../charts/cli-peer/crypto/orderer
-	
-	# Remove any remains...
-	rm -rf crypto-config
-	rm test-channel.tx
-	rm genesis.block
-	
-	cd -
+  cp -r ./crypto-config/ordererOrganizations/* ../charts/orderer/crypto
+  cp -r ./crypto-config/ordererOrganizations/* ../charts/cli-peer/crypto/orderer
+  
+  # Remove any remains...
+  rm -rf crypto-config
+  rm test-channel.tx
+  rm genesis.block
+  
+  cd -
 }
 
 deployPeers() {
-	helm install peer-org1 ./charts/peer --set organization.name=org1 --set organization.mspID=Org1 -n fabric --wait
-	helm install peer-org2 ./charts/peer --set organization.name=org2 --set organization.mspID=Org2 -n fabric --wait
+  helm install peer-org1 ./charts/peer --set organization.name=org1 --set organization.mspID=Org1 --set settings.state_database.couchdb=$COUCH_DB -n fabric --wait
+  helm install peer-org2 ./charts/peer --set organization.name=org2 --set organization.mspID=Org2 --set settings.state_database.couchdb=$COUCH_DB -n fabric --wait
 }
 
 deployCliPeers() {
-	helm install cli-peer-org1 ./charts/cli-peer --set organization.name=org1 --set organization.mspID=Org1 -n fabric --wait
-	helm install cli-peer-org2 ./charts/cli-peer --set organization.name=org2 --set organization.mspID=Org2 -n fabric --wait
+  helm install cli-peer-org1 ./charts/cli-peer --set organization.name=org1 --set organization.mspID=Org1 -n fabric --wait
+  helm install cli-peer-org2 ./charts/cli-peer --set organization.name=org2 --set organization.mspID=Org2 -n fabric --wait
 }
 
 deployOrderers() {
@@ -83,50 +86,60 @@ deployOrderers() {
 }
 
 createChannel() {
-	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel create -o orderer0:7050 -c test-channel -f /blocks/test-channel.tx --tls --cafile /crypto-material/orderer/tls/cert.pem &> /dev/null"
+  cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+  kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel create -o orderer0:7050 -c test-channel -f /blocks/test-channel.tx --tls --cafile /crypto-material/orderer/tls/cert.pem &> /dev/null"
 }
 
 joinChannelOrg1() {
-	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel fetch 0 -o orderer0:7050 -c test-channel --tls --cafile /crypto-material/orderer/tls/cert.pem"
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel join -b test-channel_0.block --tls --cafile /crypto-material/orderer/tls/cert.pem"
+  cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+  kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel fetch 0 -o orderer0:7050 -c test-channel --tls --cafile /crypto-material/orderer/tls/cert.pem"
+  kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel join -b test-channel_0.block --tls --cafile /crypto-material/orderer/tls/cert.pem"
 }
 
 joinChannelOrg2() {
-	cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel fetch 0 -o orderer0:7050 -c test-channel --tls --cafile /crypto-material/orderer/tls/cert.pem"
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel join -b test-channel_0.block --tls --cafile /crypto-material/orderer/tls/cert.pem"
+  cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+  kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel fetch 0 -o orderer0:7050 -c test-channel --tls --cafile /crypto-material/orderer/tls/cert.pem"
+  kubectl exec $cliPeerPod -n fabric -- bash -c "cd /tmp; peer channel join -b test-channel_0.block --tls --cafile /crypto-material/orderer/tls/cert.pem"
 }
 
 anchorPeerOrg1() {
-	cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer"
-	rm -rf /ops
+  cliPeerPod=$(kubectl get pods -l component=cli-peer-org1 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+  kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer"
+  rm -rf /ops
 }
 
 anchorPeerOrg2() {
-	cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
-	kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer;"
+  cliPeerPod=$(kubectl get pods -l component=cli-peer-org2 -o jsonpath='{.items[*].metadata.name}' -n fabric)
+  kubectl exec $cliPeerPod -n fabric -- bash -c "cd /ops; ./anchor_peer;"
 }
+
+COUCH_DB="false"
+
+while test $# -gt 0
+do
+    case "$1" in
+    (--couchdb)
+        shift
+        COUCH_DB="true"
+    esac
+done
 
 kubectl get namespace | grep fabric
 if [ "$?" -eq 0 ]; then
-	echo "Namespace fabric already exists."
-	exit 1
+  echo "Namespace fabric already exists."
+  exit 1
 fi
 
 kubectl create namespace fabric
-
 cd network
 if [ ! -d bin ]; then
-	downloadBinaries
+  downloadBinaries
 fi
 
 generateAndDistributeCryptoMaterial
 deployOrderers
 deployCliPeers
-deployPeers
+deployPeers 
 
 createChannel
 joinChannelOrg1

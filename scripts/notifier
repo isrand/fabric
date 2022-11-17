@@ -1,0 +1,17 @@
+build() {
+  docker build . -t notifier:1.0.0
+}
+
+deployNotifierOrg1() {
+  helm install notifier-org1 ./chart --set channel=test-channel --set settings.local=true --set organization.name=org1 --set organization.mspID=Org1 --set organization.peerEndpoint=peer-org1:7051 -n fabric --wait
+}
+
+deployNotifierOrg2() {
+  helm install notifier-org2 ./chart --set channel=test-channel --set settings.local=true --set organization.name=org2 --set organization.mspID=Org2 --set organization.peerEndpoint=peer-org2:7051 -n fabric --wait
+}
+
+cd notifier
+
+build
+deployNotifierOrg1
+deployNotifierOrg2

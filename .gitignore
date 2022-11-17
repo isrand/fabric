@@ -8,6 +8,7 @@ network/charts/orderer/crypto
 network/charts/peer/crypto
 
 gateway/chart/crypto
+notifier/chart/crypto
 
 node_modules
 *.tgz
@@ -15,3 +16,4 @@ node_modules
 package-lock.json
 
 gateway/dist
+notifier/dist

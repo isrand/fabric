@@ -1,13 +1,13 @@
 build() {
-	docker build . -t fabric-gateway:1.0.0
+  docker build . -t fabric-gateway:1.0.0
 }
 
 deployGatewayOrg1() {
-	helm install fabric-gateway-org1 ./chart --set settings.local=true --set organization.name=org1 --set organization.mspID=Org1 --set organization.peerEndpoint=peer-org1:7051 -n fabric --wait
+  helm install fabric-gateway-org1 ./chart --set settings.local=true --set organization.name=org1 --set organization.mspID=Org1 --set organization.peerEndpoint=peer-org1:7051 -n fabric --wait
 }
 
 deployGatewayOrg2() {
-	helm install fabric-gateway-org2 ./chart --set settings.local=true --set organization.name=org2 --set organization.mspID=Org2 --set organization.peerEndpoint=peer-org2:7051 -n fabric --wait
+  helm install fabric-gateway-org2 ./chart --set settings.local=true --set organization.name=org2 --set organization.mspID=Org2 --set organization.peerEndpoint=peer-org2:7051 -n fabric --wait
 }
 
 cd gateway

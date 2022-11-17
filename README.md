@@ -15,20 +15,15 @@ To be able to deploy the network you will need:
 * [docker](https://docker.com) (`brew cask install docker`)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) (`brew install kubectl`)
 * [helm](https://helm.sh) (`brew install helm`)
-
-Furthermore, if you want to develop new features or expand upon this boilerplate you will need:
-
 * [nodejs](https://nodejs.org) (`brew install node`)
 
-
-## Aliases
-
-To be able to deploy the network with just a couple of scripts it is recommended that you run the following in your terminal session:
+You will also need to install the NPM packages for the gateway and notifier microservices:
 
 ```bash
-alias chaincode=./scripts/chaincode
-alias gateway=./scripts/gateway
-alias network=./scripts/network
+cd gateway && npm install
+cd -
+cd notifier && npm install
+cd -
 ```
 
 # **Configuration**
@@ -37,21 +32,28 @@ alias network=./scripts/network
 
 ### State Database
 
-You can choose between `goleveldb` or `couchdb` as the peer's ledger state database. To deploy a `couchdb` instance for the peer, add this flag to the `helm install peer-org ...` command:
-
-```bash
---set settings.state_database.couchdb=true
-```
-
-The default state database is `goleveldb`.
+You can choose between *goleveldb* or *couchdb* as the peer's ledger state database. To deploy a *couchdb* instance for the peer, add the `--couchdb` flag when calling the `network` script. The default state database is *goleveldb*.
 
 # **Installation**
 
-If you have set the previous aliases in your terminal session, you can deploy all components by running:
+Run the following commands from this folder:
+
+## Main components — Minimal network
 
 ```bash
-network && chaincode && gateway
+./scripts/network
+./scripts/chaincode
+./scripts/gateway
 ```
+
+
+## Optional components
+
+```
+./scripts/notifier
+```
+
+# **Transacting**
 
 Once all the containers are up and running you can access each Gateway's Swagger UI to perform transactions through it. To do so, run:
 
@@ -61,8 +63,6 @@ kubectl port-forward deployment/fabric-gateway-org2 -n fabric 4001:4000 &
 ```
 
 and open http://localhost:4000/swagger on your web browser for Org1, and http://localhost:4001/swagger for Org2.
-
-# **Transacting**
 
 ## Organization 1
 
@@ -130,4 +130,16 @@ You will receive an array of elements that were added to the chain with the ledg
     ...
   ]
 }
+```
+
+
+# **Real-time notifications**
+
+To get real-time notifications when a new block is added to the network you need to deploy the `notifier` microservice. One instance is deployed per organization. The microservice exposes the port `8080` as a WebSocket Server, and can accept incoming WebSocket connections. A minimal working example of an application can be found in `/notifier/test.js`.
+
+To test the service you can run:
+
+```
+kubectl port-forward deployment/notifier-org1 -n fabric 8080:8080 &
+node notifier/client.js
 ```
