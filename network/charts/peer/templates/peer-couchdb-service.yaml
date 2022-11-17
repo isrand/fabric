@@ -1,0 +1,17 @@
+{{- if (eq .Values.settings.state_database.couchdb true) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: peer-{{ .Values.organization.name }}-couchdb
+  labels:
+    run: peer-{{ .Values.organization.name }}-couchdb
+spec:
+  type: ClusterIP
+  selector:
+    component: peer-{{ .Values.organization.name }}-couchdb
+  ports:
+  - name: http
+    port: 5984
+    protocol: TCP
+    targetPort: 5984
+{{- end }}

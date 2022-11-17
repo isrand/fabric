@@ -1,7 +1,15 @@
 image:
-  name: hyperledger/fabric-peer
-  version: 2.4.7
+  peer:
+    name: hyperledger/fabric-peer
+    version: 2.4.7
+  couchdb:
+    name: couchdb
+    version: 3.2.2
 
 organization:
   name:
   mspID:
+
+settings:
+  state_database:
+      couchdb: false
