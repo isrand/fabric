@@ -15,10 +15,16 @@ To be able to deploy the network you will need:
 * [docker](https://docker.com) (`brew cask install docker`)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) (`brew install kubectl`)
 * [helm](https://helm.sh) (`brew install helm`)
-
-Furthermore, if you want to develop new features or expand upon this boilerplate you will need:
-
 * [nodejs](https://nodejs.org) (`brew install node`)
+
+You will also need to install the NPM packages for the gateway and notifier microservices:
+
+```bash
+cd gateway && npm install
+cd -
+cd notifier && npm install
+cd -
+```
 
 # **Configuration**
 
