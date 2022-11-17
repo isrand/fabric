@@ -1,0 +1,18 @@
+# Variable assignment to make the following processes easier...
+{{ $organizationName := print .Values.organization.name}}
+
+# Different paths that contain the crypto material
+{{ $tlsCaCertPath := printf "crypto/%s.example.com/peers/peer0.%s.example.com/msp/tlscacerts/tlsca.%s.example.com-cert.pem" $organizationName $organizationName $organizationName }}
+{{ $adminPrivateKeyPath := printf "crypto/%s.example.com/users/Admin@%s.example.com/msp/keystore/priv_sk" $organizationName $organizationName }}
+{{ $adminSigncertPath := printf "crypto/%s.example.com/users/Admin@%s.example.com/msp/signcerts/Admin@%s.example.com-cert.pem" $organizationName $organizationName $organizationName }}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notifier-{{ .Values.organization.name }}-crypto-material
+type: Opaque
+data:
+  peer_tls_ca_cert: {{ .Files.Get $tlsCaCertPath | b64enc }}
+
+  admin_private_key: {{ .Files.Get $adminPrivateKeyPath | b64enc }}
+  admin_signcert: {{ .Files.Get $adminSigncertPath | b64enc }}

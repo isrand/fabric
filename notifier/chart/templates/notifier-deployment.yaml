@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifier-{{ .Values.organization.name }}
+  labels:
+    component: notifier-{{ .Values.organization.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: notifier-{{ .Values.organization.name }}
+  template:
+    metadata:
+      labels:
+        component: notifier-{{ .Values.organization.name }}
+    spec:
+      volumes:
+      - name: notifier-crypto-material
+        secret:
+          secretName: notifier-{{ .Values.organization.name }}-crypto-material
+          items:
+            - key: peer_tls_ca_cert
+              path: peer/tlsca-cert.pem
+            - key: admin_private_key
+              path: admin/priv_sk
+            - key: admin_signcert
+              path: admin/cert.pem
+      containers:
+        - name: notifier-{{ .Values.organization.name }}
+          volumeMounts:
+          - name: notifier-crypto-material
+            mountPath: /crypto-material
+          image: notifier:1.0.0
+          {{- if (eq .Values.settings.local true )}}
+          imagePullPolicy: Never
+          {{- end }}
+          env:
+            - name: PEER_TLS_ROOT_CERT_PATH
+              value: /crypto-material/peer/tlsca-cert.pem
+            - name: ORGANIZATION_NAME
+              value: {{ .Values.organization.name }}
+            - name: CHANNEL_NAME
+              value: {{ .Values.channel }}
+            - name: MSP_ID
+              value: {{ .Values.organization.mspID }}MSP
+            - name: PEER_ENDPOINT
+              value: {{ .Values.organization.peerEndpoint }}
+            - name: ADMIN_PRIVATEKEY_PATH
+              value: /crypto-material/admin/priv_sk
+            - name: ADMIN_SIGNCERT_PATH
+              value: /crypto-material/admin/cert.pem
+          ports:
+            - containerPort: 8080
