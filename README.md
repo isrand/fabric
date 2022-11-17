@@ -4,7 +4,7 @@
 
 This repository contains a minimal Hyperledger Fabric Network with extra components to quickly develop and validate a proof of concept.
 
-# Setup
+# **Setup**
 
 ## Dependencies
 
@@ -31,7 +31,21 @@ alias gateway=./scripts/gateway
 alias network=./scripts/network
 ```
 
-# Installation
+# **Configuration**
+
+## Peer
+
+### State Database
+
+You can choose between `goleveldb` or `couchdb` as the peer's ledger state database. To deploy a `couchdb` instance for the peer, add this flag to the `helm install peer-org ...` command:
+
+```bash
+--set settings.state_database.couchdb=true
+```
+
+The default state database is `goleveldb`.
+
+# **Installation**
 
 If you have set the previous aliases in your terminal session, you can deploy all components by running:
 
@@ -48,7 +62,7 @@ kubectl port-forward deployment/fabric-gateway-org2 -n fabric 4001:4000 &
 
 and open http://localhost:4000/swagger on your web browser for Org1, and http://localhost:4001/swagger for Org2.
 
-# Transacting
+# **Transacting**
 
 ## Organization 1
 

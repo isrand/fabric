@@ -1,0 +1,28 @@
+{{- if (eq .Values.settings.state_database.couchdb true) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: peer-{{ .Values.organization.name }}-couchdb
+  labels: 
+    component: peer-{{ .Values.organization.name }}-couchdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: peer-{{ .Values.organization.name }}-couchdb
+  template:
+    metadata:
+      labels:
+        component: peer-{{ .Values.organization.name }}-couchdb
+    spec:
+      containers:
+      - name: peer-{{ .Values.organization.name }}-couchdb
+        image: "{{ .Values.image.couchdb.name }}:{{ .Values.image.couchdb.version }}"
+        env:
+        - name: COUCHDB_USER
+          value: user
+        - name: COUCHDB_PASSWORD
+          value: password
+        ports:
+          - containerPort: 5984
+{{- end }}

@@ -44,7 +44,7 @@ spec:
           mountPath: /crypto-material
         - name: peer-chaincode-buildpack
           mountPath: /opt/buildpack/bin
-        image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
+        image: "{{ .Values.image.peer.name }}:{{ .Values.image.peer.version }}"
         workingDir: /opt/gopath/src/github.com/hyperledger/fabric/peer
         env:
         - name: CORE_PEER_ID
@@ -79,13 +79,22 @@ spec:
           value: /crypto-material/tls/server.key
         - name: CORE_PEER_TLS_ENABLED
           value: "true"
-        - name: CORE_LEDGER_STATE_STATEDATABASE
-          value: goleveldb
         - name: CORE_CHAINCODE_EXTERNALBUILDERS
           value: "[{name: buildpack, path: /opt/buildpack}]"
-        - name: ORDERER_URL
-          value: orderer:7050
-        - name: GODEBUG
-          value: "netdns=go"
+
+        # Peer ledger state database configuration
+       {{- if (eq .Values.settings.state_database.couchdb true) }}
+        - name: CORE_LEDGER_STATE_STATEDATABASE
+          value: CouchDB
+        - name: CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS
+          value: peer-{{ .Values.organization.name }}-couchdb:5984
+        - name: CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME
+          value: user
+        - name: CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD
+          value: password
+        {{- else }}
+        - name: CORE_LEDGER_STATE_STATEDATABASE
+          value: goleveldb
+        {{- end }}
         ports:
           - containerPort: 7051
