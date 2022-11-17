@@ -8,6 +8,7 @@ network/charts/orderer/crypto
 network/charts/peer/crypto
 
 gateway/chart/crypto
+notifier/chart/crypto
 
 node_modules
 *.tgz
