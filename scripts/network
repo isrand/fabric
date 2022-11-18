@@ -1,13 +1,14 @@
 downloadBinaries() {
   mkdir bin
-  wget https://github.com/hyperledger/fabric/releases/download/v2.4.7/hyperledger-fabric-linux-amd64-2.4.7.tar.gz
-  mv hyperledger-fabric-linux-amd64-2.4.7.tar.gz bin/
+  architecture=$(echo "$(uname -s|tr '[:upper:]' '[:lower:]'|sed 's/mingw64_nt.*/windows/')-$(uname -m |sed 's/x86_64/amd64/g')" |sed 's/darwin-arm64/darwin-amd64/g')
+  wget https://github.com/hyperledger/fabric/releases/download/v2.4.7/hyperledger-fabric-$architecture-2.4.7.tar.gz
+  mv hyperledger-fabric-$architecture-2.4.7.tar.gz bin/
   cd bin
-  tar xf hyperledger-fabric-linux-amd64-2.4.7.tar.gz
+  tar xf hyperledger-fabric-$architecture-2.4.7.tar.gz
   mv bin/configtxgen .
   mv bin/cryptogen .
   mv bin/osnadmin .
-  rm hyperledger-fabric-linux-amd64-2.4.7.tar.gz
+  rm hyperledger-fabric-$architecture-2.4.7.tar.gz
   rm -rf bin builders config
   cd -
 }
