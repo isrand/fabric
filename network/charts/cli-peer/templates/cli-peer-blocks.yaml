@@ -1,12 +1,10 @@
 # Different paths that contain the crypto material
-{{ $genesisBlockPath := printf "blocks/genesis.block" }}
 {{ $channelBlockPath := printf "blocks/test-channel.tx" }}
 
 apiVersion: v1
 kind: Secret
 metadata:
-  name: cli-peer-{{ .Values.organization.name }}-blocks
+  name: cli-peer-{{ .Values.organization.name }}-channel-block
 type: Opaque
 data:
-  genesis_block: {{ .Files.Get $genesisBlockPath | b64enc }}
   channel_block: {{ .Files.Get $channelBlockPath | b64enc }}
