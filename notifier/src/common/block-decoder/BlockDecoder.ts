@@ -1,5 +1,6 @@
 import { common, ledger, msp, peer } from '@hyperledger/fabric-protos';
 import { Block } from './interfaces/Block';
+import { BlockMetadata } from './interfaces/BlockMetadata';
 import { BlockData } from './interfaces/BlockData';
 import { ChannelHeader } from './interfaces/ChannelHeader';
 import { Envelope } from './interfaces/Envelope';
@@ -41,7 +42,7 @@ export class BlockDecoder extends CommonDecoder {
         dataHash: this.blockProtocolBuffer.getHeader()?.getDataHash()
       },
       data: this.decodeBlockData(this.blockProtocolBuffer.getData()),
-      metadata: {}
+      metadata: this.decodeBlockMetaData(this.blockProtocolBuffer.getMetadata())
     };
   }
 
@@ -109,7 +110,7 @@ export class BlockDecoder extends CommonDecoder {
     const channelHeader: ChannelHeader = {
       type: channelHeaderProtocolBuffer.getType(),
       version: channelHeaderProtocolBuffer.getVersion(),
-      timestamp: channelHeaderProtocolBuffer.getTimestamp(),
+      timestamp: channelHeaderProtocolBuffer.getTimestamp().toDate(),
       channelId: channelHeaderProtocolBuffer.getChannelId(),
       transactionId: channelHeaderProtocolBuffer.getTxId(),
       epoch: channelHeaderProtocolBuffer.getEpoch(),
@@ -347,5 +348,63 @@ export class BlockDecoder extends CommonDecoder {
       blockNumber: kvReadHashVersionProtocolBuffer.getBlockNum(),
       transactionNumber: kvReadHashVersionProtocolBuffer.getTxNum()
     };
+  }
+
+  private decodeBlockMetaData(metadataProtocolBuffer: common.BlockMetadata): BlockMetadata {
+    const metadataList = [];
+    // metadata is an array with fixed locations for metadata types
+    if (metadataProtocolBuffer && metadataProtocolBuffer.getMetadataList()) {
+      metadataList[0] = this.decodeMetadataSignatures(metadataProtocolBuffer.getMetadataList_asU8()[0]);
+      metadataList[1] = {};
+      metadataList[2] = this.decodeTransactionFilter(metadataProtocolBuffer.getMetadataList_asU8()[0]);
+      metadataList[3] = {};
+      metadataList[4] = this.decodeCommitHash(metadataProtocolBuffer.getMetadataList_asU8()[0]);
+    }
+  
+    return {
+      metadata: metadataList
+    };
+  }
+  
+  private decodeCommitHash(metadataCommitHashUint8Array: Uint8Array) {
+    return metadataCommitHashUint8Array;
+  }
+  
+  private decodeTransactionFilter(transactionFilterUint8Array: Uint8Array) {
+    const transactionFilter = [];
+    if (!transactionFilterUint8Array || !(transactionFilterUint8Array instanceof Uint8Array)) {
+  
+      return transactionFilter;
+    }
+  
+    for (let i = 0; i < transactionFilterUint8Array.length; i++) {
+      const value = Number(transactionFilterUint8Array[i]);
+      transactionFilter.push(value);
+    }
+  
+    return transactionFilter;
+  }
+  
+  private decodeMetadataSignatures(metadataSignaturesUint8Array: Uint8Array) {
+    const metadataSignaturesProtocolBuffer = common.Metadata.deserializeBinary(metadataSignaturesUint8Array);
+
+    return {
+      value: metadataSignaturesProtocolBuffer.getValue_asU8(),
+      signatures: this.decodeMetadataValueSignatures(metadataSignaturesProtocolBuffer.getSignaturesList())
+    }
+  }
+  
+  private decodeMetadataValueSignatures(metadataSignaturesProtocolBuffer: common.MetadataSignature[]) {
+    const signatures = [];
+    if (metadataSignaturesProtocolBuffer) {
+      for (const metadataSignatureProtocolBuffer of metadataSignaturesProtocolBuffer) {
+        signatures.push({
+          signatureHeader: this.decodeSignatureHeader(metadataSignatureProtocolBuffer.getSignatureHeader_asU8()),
+          signature: metadataSignatureProtocolBuffer.getSignatureHeader_asU8()
+        })
+      }
+    }
+  
+    return signatures;
   }
 }
