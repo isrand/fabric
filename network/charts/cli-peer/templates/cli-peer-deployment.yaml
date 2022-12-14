@@ -19,14 +19,6 @@ spec:
         secret:
           secretName: cli-peer-{{ .Values.organization.name }}-crypto-material
           items:
-            - key: peer_msp_config
-              path: msp/config.yaml
-            - key: peer_signcerts
-              path: msp/signcerts/peer.{{ .Values.organization.name }}.example.com-cert.pem
-            - key: peer_private_key
-              path: msp/keystore/priv_sk
-            - key: peer_ca_cert
-              path: msp/cacerts/ca.{{ .Values.organization.name }}.example.com-cert.pem
             - key: peer_tls_ca_cert
               path: tls/ca.crt
             - key: peer_tls_server_cert
@@ -37,15 +29,15 @@ spec:
               path: msp/admin/config.yaml
             - key: peer_admin_ca_cert
               path: msp/admin/cacerts/ca.{{ .Values.organization.name }}.example.com-cert.pem
-            - key: peer_admin_ca_private_key
+            - key: peer_admin_private_key
               path: msp/admin/keystore/priv_sk
-            - key: peer_admin_ca_signcerts
+            - key: peer_admin_signcert
               path: msp/admin/signcerts/Admin@{{ .Values.organization.name }}.example.com-cert.pem
             - key: orderer_tls_ca_cert
               path: orderer/tls/cert.pem
       - name: cli-peer-{{ .Values.organization.name }}-blocks
         secret:
-          secretName: cli-peer-{{ .Values.organization.name }}-blocks
+          secretName: cli-peer-{{ .Values.organization.name }}-channel-block
           items:
             - key: channel_block
               path: test-channel.tx

@@ -62,8 +62,6 @@ spec:
           value: "10"
         - name: ORDERER_GENERAL_MAXWINDOWSIZE
           value: "1000"
-        - name: ORDERER_GENERAL_ORDERERTYPE
-          value: solo
         - name: ORDERER_GENERAL_LISTENADDRESS
           value: 0.0.0.0
         - name: ORDERER_GENERAL_LISTENPORT

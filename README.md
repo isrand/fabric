@@ -16,6 +16,7 @@ To be able to deploy the network you will need:
 * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) (`brew install kubectl`)
 * [helm](https://helm.sh) (`brew install helm`)
 * [nodejs](https://nodejs.org) (`brew install node`)
+* [wget](https://www.gnu.org/software/wget/) (`brew install wget`)
 
 You will also need to install the NPM packages for the gateway and notifier microservices:
 

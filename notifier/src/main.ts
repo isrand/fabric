@@ -9,6 +9,7 @@ interface Response {
   block: Block;
   privateDataMap?: any;
 }
+
 async function start() {
   console.log('Initializing WebSocket Server...');
   const wss = new WebSocketServer({ port: 8080 });
