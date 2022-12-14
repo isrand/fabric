@@ -54,9 +54,9 @@ export class BlockDecoder extends CommonDecoder {
       data: []
     };
 
-    for (const dataBuffer of blockDataProtocolBuffer.getDataList_asU8()) {
-      const envelopeProtobuf: common.Envelope = common.Envelope.deserializeBinary(dataBuffer);
-      const envelope = this.decodeBlockDataEnvelope(envelopeProtobuf);
+    for (const dataUint8Array of blockDataProtocolBuffer.getDataList_asU8()) {
+      const envelopeProtocolBuffer: common.Envelope = common.Envelope.deserializeBinary(dataUint8Array);
+      const envelope = this.decodeBlockDataEnvelope(envelopeProtocolBuffer);
       data.data.push(envelope);
     }
 
@@ -64,8 +64,8 @@ export class BlockDecoder extends CommonDecoder {
   }
 
   private decodeBlockDataEnvelope(envelopeProtocolBuffer: common.Envelope): Envelope {
-    const payloadProto = common.Payload.deserializeBinary(envelopeProtocolBuffer.getPayload_asU8());
-    const payloadHeader: PayloadHeader | undefined = this.decodeHeader(payloadProto.getHeader());
+    const payloadProtocolBuffer = common.Payload.deserializeBinary(envelopeProtocolBuffer.getPayload_asU8());
+    const payloadHeader: PayloadHeader | undefined = this.decodeHeader(payloadProtocolBuffer.getHeader());
 
     if (!payloadHeader) {
       throw new Error('Could not decode payload header');
@@ -75,7 +75,7 @@ export class BlockDecoder extends CommonDecoder {
 
     switch (payloadHeader.channelHeader.type) {
       case 3:
-        payloadData = this.decodeEndorserTransaction(payloadProto.getData_asU8());
+        payloadData = this.decodeEndorserTransaction(payloadProtocolBuffer.getData_asU8());
 
         break;
       default:
