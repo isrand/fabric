@@ -27,10 +27,10 @@ async function start() {
       let response: Response = {
         block: decodedBlock.block
       };
+
       if (decodedBlock.privateDataMap) {
         response.privateDataMap = JSON.parse(JSON.stringify([...decodedBlock.privateDataMap]))
       }
-      console.log(JSON.stringify(response, null, 2));
 
       ws.send(JSON.stringify(response, null, 2));
     }
